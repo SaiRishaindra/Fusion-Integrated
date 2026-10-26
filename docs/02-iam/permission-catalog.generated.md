@@ -17,11 +17,11 @@ For the intended taxonomy of modules not yet built, see
 
 | Code | What it allows | Held by |
 |---|---|---|
-| `employee_leave.application.view_self` | View own leave applications | `acadadmin`, `admin`, `faculty`, `staff`, `student` |
-| `employee_leave.application.create` | Create leave applications | `acadadmin`, `admin`, `faculty`, `staff`, `student` |
-| `employee_leave.application.withdraw` | Withdraw pending applications | `acadadmin`, `admin`, `faculty`, `staff`, `student` |
-| `employee_leave.balance.view` | View leave balances | `acadadmin`, `admin`, `faculty`, `staff`, `student` |
-| `employee_leave.calendar.view` | View the holiday calendar | `acadadmin`, `admin`, `faculty`, `staff`, `student` |
+| `employee_leave.application.view_self` | View own leave applications | `acadadmin`, `admin`, `faculty`, `staff` |
+| `employee_leave.application.create` | Create leave applications | `acadadmin`, `admin`, `faculty`, `staff` |
+| `employee_leave.application.withdraw` | Withdraw pending applications | `acadadmin`, `admin`, `faculty`, `staff` |
+| `employee_leave.balance.view` | View leave balances | `acadadmin`, `admin`, `faculty`, `staff` |
+| `employee_leave.calendar.view` | View the holiday calendar | `acadadmin`, `admin`, `faculty`, `staff` |
 
 ## `placement_cell`
 

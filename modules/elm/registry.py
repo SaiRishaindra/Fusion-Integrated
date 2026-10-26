@@ -12,7 +12,7 @@ PERMISSIONS = [
 
 NAV_ITEMS = [
     {"code": "employee_leave.dashboard", "label": "Leave Dashboard",
-     "icon": "FaCalendarAlt", "to": "/leave", "required_permission":
+     "icon": "FaCalendarAlt", "to": "/leave/dashboard", "required_permission":
      "employee_leave.application.view_self", "sort_order": 10},
     {"code": "employee_leave.apply", "label": "Apply for Leave",
      "icon": "FaPlus", "to": "/leave/apply", "required_permission":
@@ -23,5 +23,5 @@ NAV_ITEMS = [
 ]
 
 _EMPLOYEE = [code for code, _label in PERMISSIONS]
-ROLE_GRANTS = {"student": _EMPLOYEE, "faculty": _EMPLOYEE, "staff": _EMPLOYEE,
+ROLE_GRANTS = {"faculty": _EMPLOYEE, "staff": _EMPLOYEE,
                "admin": _EMPLOYEE, "acadadmin": _EMPLOYEE}

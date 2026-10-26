@@ -63,21 +63,13 @@
           "employee_leave.application.withdraw",
           "employee_leave.balance.view",
           "employee_leave.calendar.view"
-        ],
-        "student": [
-          "employee_leave.application.create",
-          "employee_leave.application.view_self",
-          "employee_leave.application.withdraw",
-          "employee_leave.balance.view",
-          "employee_leave.calendar.view"
         ]
       },
       "module_grants": [
         "acadadmin",
         "admin",
         "faculty",
-        "staff",
-        "student"
+        "staff"
       ],
       "permissions": [
         {

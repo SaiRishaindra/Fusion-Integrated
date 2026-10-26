@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 
 from core.db.mixins import TimeStampedModel
@@ -46,6 +48,9 @@ class LeaveApplication(TimeStampedModel):
     start_date = models.DateField()
     end_date = models.DateField()
     half_day = models.BooleanField(default=False)
+    half_day_period = models.CharField(
+        max_length=9, blank=True,
+        choices=[("first", "First half"), ("second", "Second half")])
     reason = models.TextField(blank=True)
     status = models.CharField(max_length=12, choices=STATUS, default="pending")
     current_stage = models.CharField(max_length=40, default="unit_head")
@@ -62,7 +67,7 @@ class LeaveApplication(TimeStampedModel):
     @property
     def day_count(self):
         days = (self.end_date - self.start_date).days + 1
-        return 0.5 if self.half_day and days == 1 else days
+        return Decimal("0.5") if self.half_day and days == 1 else Decimal(days)
 
 
 class Holiday(TimeStampedModel):
@@ -75,3 +80,28 @@ class Holiday(TimeStampedModel):
     class Meta:
         db_table = "elm_holiday"
         ordering = ["date"]
+
+
+class LeaveEvent(TimeStampedModel):
+    application = models.ForeignKey(LeaveApplication, on_delete=models.CASCADE,
+                                    related_name="events")
+    actor_user_id = models.PositiveIntegerField()
+    action = models.CharField(max_length=24)
+    from_status = models.CharField(max_length=12, blank=True)
+    to_status = models.CharField(max_length=12)
+
+    class Meta:
+        db_table = "elm_leave_event"
+        ordering = ["created_at", "id"]
+
+
+class ApplicantLock(models.Model):
+    """Serialize submissions across all categories for one institute person."""
+
+    user_id = models.PositiveIntegerField(primary_key=True)
+
+    class Meta:
+        db_table = "elm_applicant_lock"
+
+    def __str__(self):
+        return str(self.user_id)

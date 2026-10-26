@@ -1,9 +1,12 @@
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.api.pagination import CursorPagination
 from fusion_auth.permissions import HasModuleGrant, HasPermission
+from modules.elm import services
 from modules.elm.api import serializers as s
 from modules.elm.models import Holiday, LeaveApplication, LeaveBalance, LeaveCategory
 
@@ -32,11 +35,15 @@ class BalanceListView(generics.ListAPIView):
 
     def get_queryset(self):
         return LeaveBalance.objects.filter(user_id=user_id(self.request)).select_related(
-            "category")
+            "category").order_by("-leave_year", "category__label", "pk")
 
 
 class ApplicationListCreateView(generics.ListCreateAPIView):
     permission_classes = [MODULE, HasPermission(P_VIEW)]
+
+    def get_permissions(self):
+        permission = P_CREATE if self.request.method == "POST" else P_VIEW
+        return [MODULE(), HasPermission(permission)()]
 
     def get_queryset(self):
         return LeaveApplication.objects.filter(user_id=user_id(self.request)).select_related(
@@ -49,10 +56,7 @@ class ApplicationListCreateView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         payload = s.ApplicationCreateSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        data = payload.validated_data
-        category = get_object_or_404(LeaveCategory, code=data.pop("category_code"), active=True)
-        application = LeaveApplication.objects.create(user_id=user_id(request),
-                                                       category=category, **data)
+        application = services.submit(actor_id=user_id(request), data=payload.validated_data)
         return Response(s.ApplicationSerializer(application).data,
                         status=status.HTTP_201_CREATED)
 
@@ -60,12 +64,9 @@ class ApplicationListCreateView(generics.ListCreateAPIView):
 class ApplicationWithdrawView(APIView):
     permission_classes = [MODULE, HasPermission(P_WITHDRAW)]
 
+    @extend_schema(request=None, responses=s.ApplicationSerializer)
     def post(self, request, pk):
-        application = get_object_or_404(LeaveApplication, pk=pk, user_id=user_id(request))
-        if application.status == "pending":
-            application.status = "withdrawn"
-            application.current_stage = "employee"
-            application.save(update_fields=["status", "current_stage", "updated_at"])
+        application = services.withdraw(actor_id=user_id(request), application_id=pk)
         return Response(s.ApplicationSerializer(application).data)
 
 
@@ -75,5 +76,25 @@ class HolidayListView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = Holiday.objects.filter(published=True)
-        year = self.request.query_params.get("year")
+        filters = s.CalendarFilterSerializer(data=self.request.query_params)
+        filters.is_valid(raise_exception=True)
+        year = filters.validated_data.get("year")
         return qs.filter(date__year=year) if year else qs
+
+
+class HistoryPagination(CursorPagination):
+    ordering = "id"
+
+
+class ApplicationHistoryView(generics.ListAPIView):
+    permission_classes = [MODULE, HasPermission(P_VIEW)]
+    serializer_class = s.EventSerializer
+    pagination_class = HistoryPagination
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            from modules.elm.models import LeaveEvent
+            return LeaveEvent.objects.none()
+        application = get_object_or_404(
+            LeaveApplication, pk=self.kwargs["pk"], user_id=user_id(self.request))
+        return application.events.all()
